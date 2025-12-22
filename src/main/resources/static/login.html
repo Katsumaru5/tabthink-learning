@@ -1,0 +1,35 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="UTF-8">
+  <title>Login</title>
+</head>
+<body>
+
+<h2>ログイン</h2>
+
+<p id="error" style="color:red; display:none;">
+  ログイン情報が間違っています
+</p>
+
+<form method="post" action="/login">
+  <div>
+    ユーザ名：
+    <input type="text" name="username">
+  </div>
+  <div>
+    パスワード：
+    <input type="password" name="password">
+  </div>
+  <button type="submit">ログイン</button>
+</form>
+
+<script>
+  const params = new URLSearchParams(window.location.search);
+  if (params.get("error") === "true") {
+    document.getElementById("error").style.display = "block";
+  }
+</script>
+
+</body>
+</html>

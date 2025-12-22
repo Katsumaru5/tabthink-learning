@@ -1,0 +1,20 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+    <meta charset="UTF-8">
+    <title>tabthink work</title>
+</head>
+<body>
+    <div id="app">
+        <p>{{ text }}</p>
+        <button @click="callApi">APIを呼ぶ</button>
+    </div>
+	<form method="post" action="/logout">
+	    <button type="submit">ログアウト</button>
+	</form>
+
+    <!-- Vue (CDN版) -->
+    <script src="https://cdn.jsdelivr.net/npm/vue/dist/vue.js"></script>
+    <script src="script.js"></script>
+</body>
+</html>
