@@ -32,8 +32,9 @@ public class LoginController {
   {
 	  	//DBからusernameが一致するユーザを探す。見つからなければnull。Userオブジェクトに変換
     User user = userRepository.findByUsername(username).orElse(null);
-    	//ユーザが存在しないまたはパスワードが一致しない場合にエラー画面を返す
+    	//ユーザが存在しないまたはパスワードが一致しない場合にエラー画面を返す//
     if (user == null || !user.getPassword().equals(password)) {
+    	
         return "redirect:/login.html?error=true";
       }
     	//パスワードが一致する場合にログイン後画面を返す
