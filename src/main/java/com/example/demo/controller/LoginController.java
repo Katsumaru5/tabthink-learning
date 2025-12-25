@@ -28,7 +28,7 @@ public class LoginController {
       @RequestParam String password,
       RedirectAttributes redirectAttributes
   ) 
-  
+ 
   {
 	  	//DBからusernameが一致するユーザを探す。見つからなければnull。Userオブジェクトに変換
     User user = userRepository.findByUsername(username).orElse(null);
@@ -40,6 +40,7 @@ public class LoginController {
     	//パスワードが一致する場合にログイン後画面を返す
     return "redirect:/index.html";
   }
+  
   @PostMapping("/logout")
   public String logout(HttpSession session) {
     //セッションを切り、ログイン状態をリセット
