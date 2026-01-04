@@ -6,8 +6,11 @@ import java.util.Map;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.CrossOrigin;
+import org.springframework.web.bind.annotation.DeleteMapping;
 import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
+import org.springframework.web.bind.annotation.PutMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
@@ -78,5 +81,48 @@ public class UserController {
     ) {
         List<Map<String, Object>> users = userService.searchUsers(name, gender, age, food, searchType);
         return ResponseEntity.ok(users);
+    }
+    
+    @GetMapping("/{id}")
+    public ResponseEntity<?> getUserById(@PathVariable Long id) {
+        Map<String, Object> user = userService.getUserById(id);
+        if (user == null) {
+            return ResponseEntity.notFound().build();
+        }
+        return ResponseEntity.ok(user);
+    }
+
+    @PutMapping("/{id}")
+    public ResponseEntity<?> updateUser(@PathVariable Long id, @RequestBody Map<String, Object> request) {
+        User user = new User();
+        user.setName((String) request.get("name"));
+        user.setGender((String) request.get("gender"));
+        
+        if (request.get("age") != null) {
+            user.setAge(Integer.parseInt(request.get("age").toString()));
+        }
+        
+        user.setPostalCode((String) request.get("postalCode"));
+        user.setPrefecture((String) request.get("prefecture"));
+        user.setCity((String) request.get("city"));
+        user.setAddress((String) request.get("address"));
+        user.setPhoneNumber((String) request.get("phoneNumber"));
+        user.setNationality((String) request.get("nationality"));
+        
+        @SuppressWarnings("unchecked")
+        List<String> favoriteFoods = (List<String>) request.get("favoriteFoods");
+        
+        Map<String, Object> response = userService.updateUser(id, user, favoriteFoods);
+        
+        boolean success = (boolean) response.get("success");
+        return success ? ResponseEntity.ok(response) : ResponseEntity.badRequest().body(response);
+    }
+
+    @DeleteMapping("/{id}")
+    public ResponseEntity<?> deleteUser(@PathVariable Long id) {
+        Map<String, Object> response = userService.deleteUser(id);
+        
+        boolean success = (boolean) response.get("success");
+        return success ? ResponseEntity.ok(response) : ResponseEntity.badRequest().body(response);
     }
 }
