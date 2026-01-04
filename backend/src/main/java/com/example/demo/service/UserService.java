@@ -3,6 +3,7 @@ package com.example.demo.service;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Optional;
 import java.util.stream.Collectors;
 
 import org.springframework.beans.factory.annotation.Autowired;
@@ -25,18 +26,20 @@ public class UserService {
     public Map<String, Object> login(String username, String password) {
         Map<String, Object> response = new HashMap<>();
         
-        boolean success = userRepository.findByUsernameAndDeletedFlag(username, false)
-            .map(user -> user.getPassword().equals(password))
-            .orElse(false);
+        Optional<User> userOpt = userRepository.findByUsernameAndDeletedFlag(username, false);
         
-        if (success) {
-            response.put("success", true);
-            response.put("message", "ログイン成功");
-        } else {
-            response.put("success", false);
-            response.put("error", "入力情報が間違っています");
+        if (userOpt.isPresent()) {
+            User user = userOpt.get();
+            if (user.getPassword().equals(password)) {
+                response.put("success", true);
+                response.put("message", "ログイン成功");
+                response.put("name", user.getName());
+                return response;
+            }
         }
         
+        response.put("success", false);
+        response.put("error", "入力情報が間違っています");
         return response;
     }
     

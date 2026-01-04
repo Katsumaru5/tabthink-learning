@@ -1,5 +1,10 @@
 <template>
   <div class="user-list-container">
+    <div class="header">
+      <div class="welcome">こんにちは {{ currentUsername }}さん</div>
+      <button @click="handleLogout" class="logout-btn">ログアウト</button>
+    </div>
+    
     <h1>ユーザー一覧</h1>
     
     <div class="search-section">
@@ -83,6 +88,7 @@ export default {
   name: 'UserListView',
   data() {
     return {
+      currentUsername: '',
       users: [],
       searchForm: {
         name: '',
@@ -94,6 +100,7 @@ export default {
     }
   },
   created() {
+    this.currentUsername = localStorage.getItem('username') || 'ゲスト'
     this.loadAllUsers()
   },
   methods: {
@@ -131,6 +138,10 @@ export default {
       }
       this.loadAllUsers()
     },
+    handleLogout() {
+      localStorage.removeItem('username')
+      this.$router.push('/login')
+    },
     goToDetail(userId) {
       this.$router.push(`/users/${userId}`)
     }
@@ -143,6 +154,36 @@ export default {
   max-width: 1200px;
   margin: 30px auto;
   padding: 20px;
+}
+
+.header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 30px;
+  padding: 15px;
+  background: #f0f0f0;
+  border-radius: 8px;
+}
+
+.welcome {
+  font-size: 18px;
+  font-weight: bold;
+  color: #333;
+}
+
+.logout-btn {
+  padding: 10px 20px;
+  background-color: #f44336;
+  color: white;
+  border: none;
+  border-radius: 4px;
+  cursor: pointer;
+  font-size: 14px;
+}
+
+.logout-btn:hover {
+  background-color: #d32f2f;
 }
 
 h1, h2 {

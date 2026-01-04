@@ -50,8 +50,12 @@ export default {
         })
         
         const data = await response.json()
+        console.log('レスポンスデータ:', data)
+        console.log('名前:', data.name)
         
         if (response.ok) {
+          localStorage.setItem('username', data.name)
+          console.log('保存した名前:', localStorage.getItem('username'))
           this.$router.push('/users')
         } else {
           this.errorMessage = data.error
