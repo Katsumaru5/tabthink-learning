@@ -177,11 +177,13 @@ public class UserService {
         }
         
         User user = userOpt.get();
+        
+        // 論理削除: deleted_flag を true にする
         user.setDeletedFlag(true);
         userRepository.save(user);
         
         response.put("success", true);
-        response.put("message", "削除成功");
+        response.put("message", "ユーザーを削除しました");
         return response;
     }
     
