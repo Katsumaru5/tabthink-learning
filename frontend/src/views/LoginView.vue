@@ -50,8 +50,6 @@ export default {
         })
         
         const data = await response.json()
-        console.log('レスポンスデータ:', data)
-        console.log('名前:', data.name)
         
         if (response.ok) {
           localStorage.setItem('username', data.name)
