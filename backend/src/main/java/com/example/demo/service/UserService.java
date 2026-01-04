@@ -47,25 +47,141 @@ public class UserService {
     public Map<String, Object> register(User user, List<String> foodNames) {
         Map<String, Object> response = new HashMap<>();
         
-        if (userRepository.findByUsernameAndDeletedFlag(user.getUsername(), false).isPresent()) {
+        // ユーザー名の重複チェック
+        Optional<User> existingUser = userRepository.findByUsernameAndDeletedFlag(
+            user.getUsername(), 
+            false
+        );
+        
+        if (existingUser.isPresent()) {
             response.put("success", false);
             response.put("error", "このユーザー名は既に使用されています");
             return response;
         }
         
+        // ユーザーを保存
         User savedUser = userRepository.save(user);
         
+        // 好きな食べ物を保存（カンマ区切りで分割）
         if (foodNames != null && !foodNames.isEmpty()) {
             for (String foodName : foodNames) {
-                FavoriteFood food = new FavoriteFood();
-                food.setUser(savedUser);
-                food.setFoodName(foodName);
-                favoriteFoodRepository.save(food);
+                if (foodName != null && !foodName.trim().isEmpty()) {
+                    // カンマで分割して個別に保存
+                    String[] foods = foodName.split("[,、]");
+                    for (String food : foods) {
+                        String trimmedFood = food.trim();
+                        if (!trimmedFood.isEmpty()) {
+                            FavoriteFood favoriteFood = new FavoriteFood(savedUser, trimmedFood);
+                            favoriteFoodRepository.save(favoriteFood);
+                        }
+                    }
+                }
             }
         }
         
         response.put("success", true);
         response.put("message", "登録成功");
+        return response;
+    }
+    
+    @Transactional
+    public Map<String, Object> updateUser(Long userId, User updatedUser, List<String> foodNames) {
+        Map<String, Object> response = new HashMap<>();
+        
+        Optional<User> userOpt = userRepository.findById(userId);
+        if (!userOpt.isPresent()) {
+            response.put("success", false);
+            response.put("error", "ユーザーが見つかりません");
+            return response;
+        }
+        
+        User user = userOpt.get();
+        
+        // ユーザー情報を更新
+        user.setName(updatedUser.getName());
+        user.setGender(updatedUser.getGender());
+        user.setAge(updatedUser.getAge());
+        user.setPostalCode(updatedUser.getPostalCode());
+        user.setPrefecture(updatedUser.getPrefecture());
+        user.setCity(updatedUser.getCity());
+        user.setAddress(updatedUser.getAddress());
+        user.setPhoneNumber(updatedUser.getPhoneNumber());
+        user.setNationality(updatedUser.getNationality());
+        
+        // 既存の好きな食べ物を削除
+        favoriteFoodRepository.deleteAll(user.getFavoriteFoods());
+        user.getFavoriteFoods().clear();
+        
+        // 新しい好きな食べ物を追加（カンマ区切りで分割）
+        if (foodNames != null && !foodNames.isEmpty()) {
+            for (String foodName : foodNames) {
+                if (foodName != null && !foodName.trim().isEmpty()) {
+                    // カンマで分割して個別に保存
+                    String[] foods = foodName.split("[,、]");
+                    for (String food : foods) {
+                        String trimmedFood = food.trim();
+                        if (!trimmedFood.isEmpty()) {
+                            FavoriteFood favoriteFood = new FavoriteFood(user, trimmedFood);
+                            user.getFavoriteFoods().add(favoriteFood);
+                        }
+                    }
+                }
+            }
+        }
+        
+        userRepository.save(user);
+        
+        response.put("success", true);
+        response.put("message", "ユーザー情報を更新しました");
+        return response;
+    }
+
+    public Map<String, Object> getUserById(Long userId) {
+        Optional<User> userOpt = userRepository.findById(userId);
+        
+        if (!userOpt.isPresent()) {
+            return null;
+        }
+        
+        User user = userOpt.get();
+        Map<String, Object> userMap = new HashMap<>();
+        userMap.put("id", user.getId());
+        userMap.put("username", user.getUsername());
+        userMap.put("name", user.getName());
+        userMap.put("gender", user.getGender());
+        userMap.put("age", user.getAge());
+        userMap.put("postalCode", user.getPostalCode());
+        userMap.put("prefecture", user.getPrefecture());
+        userMap.put("city", user.getCity());
+        userMap.put("address", user.getAddress());
+        userMap.put("phoneNumber", user.getPhoneNumber());
+        userMap.put("nationality", user.getNationality());
+        
+        List<String> foods = user.getFavoriteFoods().stream()
+            .map(FavoriteFood::getFoodName)
+            .collect(Collectors.toList());
+        userMap.put("favoriteFoods", foods);
+        
+        return userMap;
+    }
+
+    @Transactional
+    public Map<String, Object> deleteUser(Long userId) {
+        Map<String, Object> response = new HashMap<>();
+        
+        Optional<User> userOpt = userRepository.findById(userId);
+        if (!userOpt.isPresent()) {
+            response.put("success", false);
+            response.put("error", "ユーザーが見つかりません");
+            return response;
+        }
+        
+        User user = userOpt.get();
+        user.setDeletedFlag(true);
+        userRepository.save(user);
+        
+        response.put("success", true);
+        response.put("message", "削除成功");
         return response;
     }
     
