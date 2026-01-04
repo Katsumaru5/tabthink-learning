@@ -23,8 +23,11 @@ public class UserService {
     @Autowired
     private FavoriteFoodRepository favoriteFoodRepository;
     
-    public Map<String, Object> login(String username, String password) {
+    public Map<String, Object> login(Map<String, String> request) {
         Map<String, Object> response = new HashMap<>();
+        
+        String username = request.get("username");
+        String password = request.get("password");
         
         Optional<User> userOpt = userRepository.findByUsernameAndDeletedFlag(username, false);
         
@@ -44,8 +47,26 @@ public class UserService {
     }
     
     @Transactional
-    public Map<String, Object> register(User user, List<String> foodNames) {
+    public Map<String, Object> register(Map<String, Object> request) {
         Map<String, Object> response = new HashMap<>();
+        
+        // リクエストからUserオブジェクトを作成
+        User user = new User();
+        user.setUsername((String) request.get("username"));
+        user.setPassword((String) request.get("password"));
+        user.setName((String) request.get("name"));
+        user.setGender((String) request.get("gender"));
+        
+        if (request.get("age") != null) {
+            user.setAge(Integer.parseInt(request.get("age").toString()));
+        }
+        
+        user.setPostalCode((String) request.get("postalCode"));
+        user.setPrefecture((String) request.get("prefecture"));
+        user.setCity((String) request.get("city"));
+        user.setAddress((String) request.get("address"));
+        user.setPhoneNumber((String) request.get("phoneNumber"));
+        user.setNationality((String) request.get("nationality"));
         
         // ユーザー名の重複チェック
         Optional<User> existingUser = userRepository.findByUsernameAndDeletedFlag(
@@ -62,11 +83,13 @@ public class UserService {
         // ユーザーを保存
         User savedUser = userRepository.save(user);
         
-        // 好きな食べ物を保存（カンマ区切りで分割）
-        if (foodNames != null && !foodNames.isEmpty()) {
-            for (String foodName : foodNames) {
+        // 好きな食べ物を保存
+        @SuppressWarnings("unchecked")
+        List<String> favoriteFoods = (List<String>) request.get("favoriteFoods");
+        
+        if (favoriteFoods != null && !favoriteFoods.isEmpty()) {
+            for (String foodName : favoriteFoods) {
                 if (foodName != null && !foodName.trim().isEmpty()) {
-                    // カンマで分割して個別に保存
                     String[] foods = foodName.split("[,、]");
                     for (String food : foods) {
                         String trimmedFood = food.trim();
@@ -85,7 +108,7 @@ public class UserService {
     }
     
     @Transactional
-    public Map<String, Object> updateUser(Long userId, User updatedUser, List<String> foodNames) {
+    public Map<String, Object> updateUser(Long userId, Map<String, Object> request) {
         Map<String, Object> response = new HashMap<>();
         
         Optional<User> userOpt = userRepository.findById(userId);
@@ -97,26 +120,32 @@ public class UserService {
         
         User user = userOpt.get();
         
-        // ユーザー情報を更新
-        user.setName(updatedUser.getName());
-        user.setGender(updatedUser.getGender());
-        user.setAge(updatedUser.getAge());
-        user.setPostalCode(updatedUser.getPostalCode());
-        user.setPrefecture(updatedUser.getPrefecture());
-        user.setCity(updatedUser.getCity());
-        user.setAddress(updatedUser.getAddress());
-        user.setPhoneNumber(updatedUser.getPhoneNumber());
-        user.setNationality(updatedUser.getNationality());
+        // リクエストからデータを取得して更新
+        user.setName((String) request.get("name"));
+        user.setGender((String) request.get("gender"));
+        
+        if (request.get("age") != null) {
+            user.setAge(Integer.parseInt(request.get("age").toString()));
+        }
+        
+        user.setPostalCode((String) request.get("postalCode"));
+        user.setPrefecture((String) request.get("prefecture"));
+        user.setCity((String) request.get("city"));
+        user.setAddress((String) request.get("address"));
+        user.setPhoneNumber((String) request.get("phoneNumber"));
+        user.setNationality((String) request.get("nationality"));
         
         // 既存の好きな食べ物を削除
         favoriteFoodRepository.deleteAll(user.getFavoriteFoods());
         user.getFavoriteFoods().clear();
         
-        // 新しい好きな食べ物を追加（カンマ区切りで分割）
-        if (foodNames != null && !foodNames.isEmpty()) {
-            for (String foodName : foodNames) {
+        // 新しい好きな食べ物を追加
+        @SuppressWarnings("unchecked")
+        List<String> favoriteFoods = (List<String>) request.get("favoriteFoods");
+        
+        if (favoriteFoods != null && !favoriteFoods.isEmpty()) {
+            for (String foodName : favoriteFoods) {
                 if (foodName != null && !foodName.trim().isEmpty()) {
-                    // カンマで分割して個別に保存
                     String[] foods = foodName.split("[,、]");
                     for (String food : foods) {
                         String trimmedFood = food.trim();

@@ -16,51 +16,26 @@ import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 
-import com.example.demo.model.User;
 import com.example.demo.service.UserService;
 
 @RestController
 @RequestMapping("/api/users")
 @CrossOrigin(origins = "http://localhost:8080")
 public class UserController {
+    
     @Autowired
     private UserService userService;
     
     @PostMapping("/login")
     public ResponseEntity<?> login(@RequestBody Map<String, String> request) {
-        Map<String, Object> response = userService.login(
-            request.get("username"), 
-            request.get("password")
-        );
-        
+        Map<String, Object> response = userService.login(request);
         boolean success = (boolean) response.get("success");
         return success ? ResponseEntity.ok(response) : ResponseEntity.badRequest().body(response);
     }
     
     @PostMapping("/register")
     public ResponseEntity<?> register(@RequestBody Map<String, Object> request) {
-        User user = new User();
-        user.setUsername((String) request.get("username"));
-        user.setPassword((String) request.get("password"));
-        user.setName((String) request.get("name"));
-        user.setGender((String) request.get("gender"));
-        
-        if (request.get("age") != null) {
-            user.setAge(Integer.parseInt(request.get("age").toString()));
-        }
-        
-        user.setPostalCode((String) request.get("postalCode"));
-        user.setPrefecture((String) request.get("prefecture"));
-        user.setCity((String) request.get("city"));
-        user.setAddress((String) request.get("address"));
-        user.setPhoneNumber((String) request.get("phoneNumber"));
-        user.setNationality((String) request.get("nationality"));
-        
-        @SuppressWarnings("unchecked")
-        List<String> favoriteFoods = (List<String>) request.get("favoriteFoods");
-        
-        Map<String, Object> response = userService.register(user, favoriteFoods);
-        
+        Map<String, Object> response = userService.register(request);
         boolean success = (boolean) response.get("success");
         return success ? ResponseEntity.ok(response) : ResponseEntity.badRequest().body(response);
     }
@@ -94,26 +69,7 @@ public class UserController {
 
     @PutMapping("/{id}")
     public ResponseEntity<?> updateUser(@PathVariable Long id, @RequestBody Map<String, Object> request) {
-        User user = new User();
-        user.setName((String) request.get("name"));
-        user.setGender((String) request.get("gender"));
-        
-        if (request.get("age") != null) {
-            user.setAge(Integer.parseInt(request.get("age").toString()));
-        }
-        
-        user.setPostalCode((String) request.get("postalCode"));
-        user.setPrefecture((String) request.get("prefecture"));
-        user.setCity((String) request.get("city"));
-        user.setAddress((String) request.get("address"));
-        user.setPhoneNumber((String) request.get("phoneNumber"));
-        user.setNationality((String) request.get("nationality"));
-        
-        @SuppressWarnings("unchecked")
-        List<String> favoriteFoods = (List<String>) request.get("favoriteFoods");
-        
-        Map<String, Object> response = userService.updateUser(id, user, favoriteFoods);
-        
+        Map<String, Object> response = userService.updateUser(id, request);
         boolean success = (boolean) response.get("success");
         return success ? ResponseEntity.ok(response) : ResponseEntity.badRequest().body(response);
     }
@@ -121,7 +77,6 @@ public class UserController {
     @DeleteMapping("/{id}")
     public ResponseEntity<?> deleteUser(@PathVariable Long id) {
         Map<String, Object> response = userService.deleteUser(id);
-        
         boolean success = (boolean) response.get("success");
         return success ? ResponseEntity.ok(response) : ResponseEntity.badRequest().body(response);
     }
