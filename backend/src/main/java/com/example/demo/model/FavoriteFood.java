@@ -21,7 +21,7 @@ public class FavoriteFood {
     private Long id;
     
     @ManyToOne(fetch = FetchType.LAZY)//多対一であることを宣言。user情報が必要になるまで読み込まないパフォーマンス対策
-    @JoinColumn(name = "user_id", nullable = false)//avorite_foods テーブルの user_id カラムでUserと紐づける
+    @JoinColumn(name = "user_id", nullable = false)//avorite_foods テーブルの user_id カラムでUserのidと対応づける
     @JsonIgnore
     private User user;
     

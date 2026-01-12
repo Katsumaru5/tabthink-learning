@@ -33,9 +33,10 @@ public class UserService {
         //データベース「users」でユーザ検索
         Optional<User> userOpt = userRepository.findByUsernameAndDeletedFlag(username, false);
         
+        //ユーザが存在するか確認
         if (userOpt.isPresent()) {
-            User user = userOpt.get();//ユーザが存在するか確認
-          //パスワードがするか確認
+            User user = userOpt.get();
+          //パスワードが一致するか確認
             if (user.getPassword().equals(password)) {
                 response.put("success", true);
                 response.put("message", "ログイン成功");
@@ -91,6 +92,7 @@ public class UserService {
         @SuppressWarnings("unchecked")
         List<String> favoriteFoods = (List<String>) request.get("favoriteFoods");
         
+        //ユーザー登録後に、好きな食べ物を1つずつ正規化してDBに保存する
         if (favoriteFoods != null && !favoriteFoods.isEmpty()) {
             for (String foodName : favoriteFoods) {
                 if (foodName != null && !foodName.trim().isEmpty()) {
@@ -139,7 +141,7 @@ public class UserService {
         user.setPhoneNumber((String) request.get("phoneNumber"));
         user.setNationality((String) request.get("nationality"));
         
-        // 既存の好きな食べ物を削除
+        // 既存の好きな食べ物を	削除
         favoriteFoodRepository.deleteAll(user.getFavoriteFoods());
         user.getFavoriteFoods().clear();
         
