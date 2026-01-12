@@ -26,27 +26,27 @@ public class UserController {
     @Autowired
     private UserService userService;
     
-    @PostMapping("/login")
+    @PostMapping("/login") //ログイン画面の制御
     public ResponseEntity<?> login(@RequestBody Map<String, String> request) {
         Map<String, Object> response = userService.login(request);
         boolean success = (boolean) response.get("success");
         return success ? ResponseEntity.ok(response) : ResponseEntity.badRequest().body(response);
     }
     
-    @PostMapping("/register")
+    @PostMapping("/register")//ユーザ登録画面の制御
     public ResponseEntity<?> register(@RequestBody Map<String, Object> request) {
         Map<String, Object> response = userService.register(request);
         boolean success = (boolean) response.get("success");
         return success ? ResponseEntity.ok(response) : ResponseEntity.badRequest().body(response);
     }
     
-    @GetMapping("/list")
+    @GetMapping("/list")//ユーザ一覧画面の制御
     public ResponseEntity<?> getAllUsers() {
         List<Map<String, Object>> users = userService.getAllUsers();
         return ResponseEntity.ok(users);
     }
     
-    @GetMapping("/search")
+    @GetMapping("/search")//ユーザ検索画面の制御
     public ResponseEntity<?> searchUsers(
         @RequestParam(required = false) String name,
         @RequestParam(required = false) String gender,
@@ -58,7 +58,7 @@ public class UserController {
         return ResponseEntity.ok(users);
     }
     
-    @GetMapping("/{id}")
+    @GetMapping("/{id}")//ユーザ詳細画面の制御
     public ResponseEntity<?> getUserById(@PathVariable Long id) {
         Map<String, Object> user = userService.getUserById(id);
         if (user == null) {
@@ -66,15 +66,15 @@ public class UserController {
         }
         return ResponseEntity.ok(user);
     }
-
-    @PutMapping("/{id}")
+    
+    @PutMapping("/{id}")//ユーザ編集画面の制御
     public ResponseEntity<?> updateUser(@PathVariable Long id, @RequestBody Map<String, Object> request) {
         Map<String, Object> response = userService.updateUser(id, request);
         boolean success = (boolean) response.get("success");
         return success ? ResponseEntity.ok(response) : ResponseEntity.badRequest().body(response);
     }
 
-    @DeleteMapping("/{id}")
+    @DeleteMapping("/{id}")//ユーザ削除画面の制御
     public ResponseEntity<?> deleteUser(@PathVariable Long id) {
         Map<String, Object> response = userService.deleteUser(id);
         boolean success = (boolean) response.get("success");

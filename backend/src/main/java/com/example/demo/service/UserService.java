@@ -23,16 +23,19 @@ public class UserService {
     @Autowired
     private FavoriteFoodRepository favoriteFoodRepository;
     
+    //ログイン処理
     public Map<String, Object> login(Map<String, String> request) {
         Map<String, Object> response = new HashMap<>();
         
         String username = request.get("username");
         String password = request.get("password");
         
+        //データベース「users」でユーザ検索
         Optional<User> userOpt = userRepository.findByUsernameAndDeletedFlag(username, false);
         
         if (userOpt.isPresent()) {
-            User user = userOpt.get();
+            User user = userOpt.get();//ユーザが存在するか確認
+          //パスワードがするか確認
             if (user.getPassword().equals(password)) {
                 response.put("success", true);
                 response.put("message", "ログイン成功");
@@ -46,11 +49,12 @@ public class UserService {
         return response;
     }
     
+    //ユーザ登録処理
     @Transactional
     public Map<String, Object> register(Map<String, Object> request) {
         Map<String, Object> response = new HashMap<>();
         
-        // リクエストからUserオブジェクトを作成
+        // リクエストからuserオブジェクトを作成
         User user = new User();
         user.setUsername((String) request.get("username"));
         user.setPassword((String) request.get("password"));
@@ -217,6 +221,7 @@ public class UserService {
     }
     
     public List<Map<String, Object>> getAllUsers() {
+    	//全ユーザを取得（好きな食べ物も含む）
         List<User> users = userRepository.findAllWithFavoriteFoods();
         
         return users.stream().map(user -> {
@@ -243,10 +248,13 @@ public class UserService {
     }
     
     public List<Map<String, Object>> searchUsers(String name, String gender, Integer age, String food, String searchType) {
-        List<User> allUsers = userRepository.findAllWithFavoriteFoods();
+        //全ユーザを取得（好きな食べ物も含む）
+    	List<User> allUsers = userRepository.findAllWithFavoriteFoods();
         
+    	//条件に合うユーザだけフィルタ
         return allUsers.stream()
             .filter(user -> {
+            	//各条件をチェック
                 boolean nameMatch = name == null || name.isEmpty() || user.getName().contains(name);
                 boolean genderMatch = gender == null || gender.isEmpty() || gender.equals(user.getGender());
                 boolean ageMatch = age == null || (user.getAge() != null && user.getAge().equals(age));
@@ -254,6 +262,7 @@ public class UserService {
                     user.getFavoriteFoods().stream()
                         .anyMatch(f -> f.getFoodName().contains(food));
                 
+                //AND検索　または　OR検索
                 if ("OR".equalsIgnoreCase(searchType)) {
                     return nameMatch || genderMatch || ageMatch || foodMatch;
                 } else {

@@ -12,23 +12,23 @@ import jakarta.persistence.Table;
 
 import com.fasterxml.jackson.annotation.JsonIgnore;
 
-@Entity
-@Table(name = "favorite_foods")
+@Entity//このクラスはデータベースに保存することを宣言
+@Table(name = "favorite_foods")//テーブル「favorite_foods」と対応させることを宣言
 public class FavoriteFood {
     
-    @Id
-    @GeneratedValue(strategy = GenerationType.IDENTITY)
+    @Id//主キー
+    @GeneratedValue(strategy = GenerationType.IDENTITY)//テーブル側でidを自動採番
     private Long id;
     
-    @ManyToOne(fetch = FetchType.LAZY)
-    @JoinColumn(name = "user_id", nullable = false)
+    @ManyToOne(fetch = FetchType.LAZY)//多対一であることを宣言。user情報が必要になるまで読み込まないパフォーマンス対策
+    @JoinColumn(name = "user_id", nullable = false)//avorite_foods テーブルの user_id カラムでUserと紐づける
     @JsonIgnore
     private User user;
     
     @Column(name = "food_name", nullable = false)
     private String foodName;
     
-    public FavoriteFood() {}
+    public FavoriteFood() {}//空の状態で箱だけ用意
     
     public FavoriteFood(User user, String foodName) {
         this.user = user;
