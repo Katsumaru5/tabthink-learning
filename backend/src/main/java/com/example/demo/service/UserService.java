@@ -50,7 +50,7 @@ public class UserService {
         return response;
     }
     
-    //ユーザ登録処理
+    //ユーザ登録処理.⭐️リクエスト情報をチェックする処理を事前に入れる
     @Transactional
     public Map<String, Object> register(Map<String, Object> request) {
         Map<String, Object> response = new HashMap<>();
@@ -89,14 +89,12 @@ public class UserService {
         User savedUser = userRepository.save(user);
         
         // 好きな食べ物を保存
-        @SuppressWarnings("unchecked")
-        List<String> favoriteFoods = (List<String>) request.get("favoriteFoods");
+        //@SuppressWarnings("unchecked")⭐️これは記載しちゃダメ。基本的には値が有無チェックと型変換が可能かのチェックをしてから。
+        String favoriteFoods = (String) request.get("favoriteFoods");
         
-        //ユーザー登録後に、好きな食べ物を1つずつ正規化してDBに保存する
-        if (favoriteFoods != null && !favoriteFoods.isEmpty()) {
-            for (String foodName : favoriteFoods) {
-                if (foodName != null && !foodName.trim().isEmpty()) {
-                    String[] foods = foodName.split("[,、]");
+        //ユーザー登録後に、好きな食べ物を1つずつ正規化してDBに保存する.
+                if (favoriteFoods != null && !favoriteFoods.trim().isEmpty()) {
+                    String[] foods = favoriteFoods.split("[,、]");
                     for (String food : foods) {
                         String trimmedFood = food.trim();
                         if (!trimmedFood.isEmpty()) {
@@ -105,8 +103,6 @@ public class UserService {
                         }
                     }
                 }
-            }
-        }
         
         response.put("success", true);
         response.put("message", "登録成功");
@@ -149,6 +145,7 @@ public class UserService {
         @SuppressWarnings("unchecked")
         List<String> favoriteFoods = (List<String>) request.get("favoriteFoods");
         
+        //⭐️bulkinsertすると速い
         if (favoriteFoods != null && !favoriteFoods.isEmpty()) {
             for (String foodName : favoriteFoods) {
                 if (foodName != null && !foodName.trim().isEmpty()) {

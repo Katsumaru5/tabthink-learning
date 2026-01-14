@@ -23,7 +23,7 @@ import com.example.demo.service.UserService;
 @CrossOrigin(origins = "http://localhost:8080")
 public class UserController {
     
-    @Autowired
+    @Autowired//どういうルールで読み込まれているか
     private UserService userService;
     
     @PostMapping("/login") //ログイン画面の制御
