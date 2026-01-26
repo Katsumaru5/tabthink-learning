@@ -12,7 +12,7 @@ import com.example.demo.model.User;
 
 public interface UserRepository extends JpaRepository<User, Long> {
     
-    // 🔧 一覧表示用: 必要なフィールドのみ取得
+    // 一覧表示用: 必要なフィールドのみ取得
     @Query("SELECT new com.example.demo.dto.UserListDTO(" +
            "u.id, u.name, u.gender, u.age, u.postalCode, " +
            "u.prefecture, u.city, u.address, u.phoneNumber, u.nationality) " +
@@ -20,7 +20,7 @@ public interface UserRepository extends JpaRepository<User, Long> {
            "WHERE u.deletedFlag = false")
     List<UserListDTO> findAllUsersForList();
     
-    // 既存のメソッド（詳細取得用）
+    // 詳細取得用
     @Query("SELECT DISTINCT u FROM User u " +
            "LEFT JOIN FETCH u.favoriteFoods f " +
            "WHERE u.deletedFlag = false " +
@@ -60,7 +60,7 @@ public interface UserRepository extends JpaRepository<User, Long> {
         @Param("food") String food
     );
     
-    // 🔧 ユーザーIDリストから好きな食べ物を取得
+    // ユーザーIDリストから好きな食べ物を取得
     @Query("SELECT f.user.id, f.foodName FROM FavoriteFood f " +
            "WHERE f.user.id IN :userIds AND f.deletedFlag = false")
     List<Object[]> findFavoriteFoodsByUserIds(@Param("userIds") List<Long> userIds);

@@ -38,6 +38,45 @@ public class UserController {
     private UserService userService;
 
     /**
+     * ログイン
+     */
+    @PostMapping("/login")
+    public ResponseEntity<Map<String, Object>> login(
+            @RequestBody Map<String, String> credentials) {
+        
+        String username = credentials.get("username");
+        String password = credentials.get("password");
+        
+        LoginRequestDTO loginDTO = new LoginRequestDTO();
+        loginDTO.setUsername(username);
+        loginDTO.setPassword(password);
+        
+        try {
+            Map<String, Object> response = userService.login(loginDTO);
+            return ResponseEntity.ok(response);
+        } catch (Exception e) {
+            Map<String, Object> errorResponse = new HashMap<>();
+            errorResponse.put("success", false);
+            errorResponse.put("error", e.getMessage());
+            return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body(errorResponse);
+        }
+    }    
+
+    /**
+     * ユーザーID取得
+     */
+    @GetMapping("/{id}")
+    public ResponseEntity<?> getUserById(@PathVariable Long id) {
+        try {
+            UserResponseDTO user = userService.getUserById(id);
+            return ResponseEntity.ok(user);
+        } catch (Exception e) {
+            return ResponseEntity.status(HttpStatus.NOT_FOUND)
+                .body(buildErrorResponse("ユーザーが見つかりません"));
+        }
+    }
+
+    /**
      * 全ユーザー取得（一覧表示用）
      */
     @GetMapping("/list")
@@ -128,50 +167,9 @@ public class UserController {
                 .body(buildErrorResponse(e.getMessage()));
         }
     }
-
+    
     /**
-     * ユーザーID取得
-     */
-    @GetMapping("/{id}")
-    public ResponseEntity<?> getUserById(@PathVariable Long id) {
-        try {
-            UserResponseDTO user = userService.getUserById(id);
-            return ResponseEntity.ok(user);
-        } catch (Exception e) {
-            return ResponseEntity.status(HttpStatus.NOT_FOUND)
-                .body(buildErrorResponse("ユーザーが見つかりません"));
-        }
-    }
-
-    /**
-     * ログイン
-     */
-    @PostMapping("/login")
-    public ResponseEntity<Map<String, Object>> login(
-            @RequestBody Map<String, String> credentials) {
-        
-        String username = credentials.get("username");
-        String password = credentials.get("password");
-        
-        LoginRequestDTO loginDTO = new LoginRequestDTO();
-        loginDTO.setUsername(username);
-        loginDTO.setPassword(password);
-        
-        try {
-            Map<String, Object> response = userService.login(loginDTO);
-            return ResponseEntity.ok(response);
-        } catch (Exception e) {
-            Map<String, Object> errorResponse = new HashMap<>();
-            errorResponse.put("success", false);
-            errorResponse.put("error", e.getMessage());
-            return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body(errorResponse);
-        }
-    }
-
-    // ===== プライベートヘルパーメソッド =====
-
-    /**
-     * バリデーションエラーレスポンス構築
+     * バリデーションエラーレスポンス
      */
     private Map<String, Object> buildValidationErrorResponse(BindingResult bindingResult) {
         Map<String, String> errors = new HashMap<>();
@@ -188,7 +186,7 @@ public class UserController {
     }
 
     /**
-     * エラーレスポンス構築
+     * エラーレスポンス
      */
     private Map<String, Object> buildErrorResponse(String message) {
         Map<String, Object> response = new HashMap<>();

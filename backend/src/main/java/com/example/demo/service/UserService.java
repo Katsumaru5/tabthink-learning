@@ -304,8 +304,6 @@ public class UserService {
     return results;
   }
   
-  // ===== プライベートメソッド =====
-  
   /**
    * OR検索のフィルタリング
    */
