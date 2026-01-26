@@ -143,13 +143,11 @@ public class UserService {
         
         // 新しい好きな食べ物を追加
         @SuppressWarnings("unchecked")
-        List<String> favoriteFoods = (List<String>) request.get("favoriteFoods");
+        String favoriteFoods = (String) request.get("favoriteFoods");
         
         //⭐️bulkinsertすると速い
-        if (favoriteFoods != null && !favoriteFoods.isEmpty()) {
-            for (String foodName : favoriteFoods) {
-                if (foodName != null && !foodName.trim().isEmpty()) {
-                    String[] foods = foodName.split("[,、]");
+                if (favoriteFoods != null && !favoriteFoods.trim().isEmpty()) {
+                    String[] foods = favoriteFoods.split("[,、]");
                     for (String food : foods) {
                         String trimmedFood = food.trim();
                         if (!trimmedFood.isEmpty()) {
@@ -158,8 +156,6 @@ public class UserService {
                         }
                     }
                 }
-            }
-        }
         
         userRepository.save(user);
         
@@ -210,7 +206,7 @@ public class UserService {
         
         User user = userOpt.get();
         
-        // 論理削除: deleted_flag を true にする
+        // 論理削除: deleted_flag を true にする。⭐️ユーザだけでなく、好きな食べ物の削除もできるとよい。結合する時に処理が速くなる（ゴミが混ざらない）
         user.setDeletedFlag(true);
         userRepository.save(user);
         
@@ -247,13 +243,13 @@ public class UserService {
     }
     
     public List<Map<String, Object>> searchUsers(String name, String gender, Integer age, String food, String searchType) {
-        //全ユーザを取得（好きな食べ物も含む）
+        //全ユーザを取得（好きな食べ物も含む）⭐必要なデータのみ持ってくる（サーバ・DBへの負荷を考慮する）メモリを大幅に食ってしまう。
     	List<User> allUsers = userRepository.findAllWithFavoriteFoods();
         
     	//条件に合うユーザだけフィルタ
         return allUsers.stream()
             .filter(user -> {
-            	//各条件をチェック
+            	//各条件をチェック。⭐️１つ目と２つ目の条件は同じ？
                 boolean nameMatch = name == null || name.isEmpty() || user.getName().contains(name);
                 boolean genderMatch = gender == null || gender.isEmpty() || gender.equals(user.getGender());
                 boolean ageMatch = age == null || (user.getAge() != null && user.getAge().equals(age));
@@ -268,6 +264,7 @@ public class UserService {
                     return nameMatch && genderMatch && ageMatch && foodMatch;
                 }
             })
+            //⭐ここのロジックがわからない。
             .map(user -> {
                 Map<String, Object> userMap = new HashMap<>();
                 userMap.put("id", user.getId());

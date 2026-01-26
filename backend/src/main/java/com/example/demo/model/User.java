@@ -13,6 +13,7 @@ import jakarta.persistence.Id;
 import jakarta.persistence.OneToMany;
 import jakarta.persistence.Table;
 
+//⭐️全てのデータに対して、誰がいつ作ったか・更新したか・削除したかがわかるようにする。
 @Entity
 @Table(name = "users")
 public class User {
