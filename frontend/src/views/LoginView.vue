@@ -84,8 +84,12 @@ export default {
 } catch (error) {
 	console.error('ログインエラー:', error);
 	this.errorMessage = '接続エラーが発生しました';
-}
-	}
+      }
+    },
+    goToRegister() {
+      console.log('📝 登録画面へ遷移');
+      this.$router.push('/register');
+    }
   }
 };
 </script>
