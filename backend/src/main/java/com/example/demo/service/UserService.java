@@ -1,5 +1,6 @@
 package com.example.demo.service;
 
+import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -10,6 +11,11 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import com.example.demo.dto.LoginRequestDTO;
+import com.example.demo.dto.UserRegistrationDTO;
+import com.example.demo.dto.UserResponseDTO;
+import com.example.demo.dto.UserSearchDTO;
+import com.example.demo.dto.UserUpdateDTO;
 import com.example.demo.model.FavoriteFood;
 import com.example.demo.model.User;
 import com.example.demo.repository.FavoriteFoodRepository;
@@ -17,27 +23,27 @@ import com.example.demo.repository.UserRepository;
 
 @Service
 public class UserService {
+    
     @Autowired
     private UserRepository userRepository;
     
     @Autowired
     private FavoriteFoodRepository favoriteFoodRepository;
     
-    //ログイン処理
-    public Map<String, Object> login(Map<String, String> request) {
+    // ログイン処理
+    public Map<String, Object> login(LoginRequestDTO loginDTO) {
         Map<String, Object> response = new HashMap<>();
         
-        String username = request.get("username");
-        String password = request.get("password");
+        // ユーザー検索
+        Optional<User> userOpt = userRepository.findByUsernameAndDeletedFlag(
+            loginDTO.getUsername(), 
+            false
+        );
         
-        //データベース「users」でユーザ検索
-        Optional<User> userOpt = userRepository.findByUsernameAndDeletedFlag(username, false);
-        
-        //ユーザが存在するか確認
+        // ユーザー存在確認とパスワード照合
         if (userOpt.isPresent()) {
             User user = userOpt.get();
-          //パスワードが一致するか確認
-            if (user.getPassword().equals(password)) {
+            if (user.getPassword().equals(loginDTO.getPassword())) {
                 response.put("success", true);
                 response.put("message", "ログイン成功");
                 response.put("name", user.getName());
@@ -50,32 +56,14 @@ public class UserService {
         return response;
     }
     
-    //ユーザ登録処理.⭐️リクエスト情報をチェックする処理を事前に入れる
+    // ユーザ登録処理
     @Transactional
-    public Map<String, Object> register(Map<String, Object> request) {
+    public Map<String, Object> register(UserRegistrationDTO registrationDTO) {
         Map<String, Object> response = new HashMap<>();
-        
-        // リクエストからuserオブジェクトを作成
-        User user = new User();
-        user.setUsername((String) request.get("username"));
-        user.setPassword((String) request.get("password"));
-        user.setName((String) request.get("name"));
-        user.setGender((String) request.get("gender"));
-        
-        if (request.get("age") != null) {
-            user.setAge(Integer.parseInt(request.get("age").toString()));
-        }
-        
-        user.setPostalCode((String) request.get("postalCode"));
-        user.setPrefecture((String) request.get("prefecture"));
-        user.setCity((String) request.get("city"));
-        user.setAddress((String) request.get("address"));
-        user.setPhoneNumber((String) request.get("phoneNumber"));
-        user.setNationality((String) request.get("nationality"));
         
         // ユーザー名の重複チェック
         Optional<User> existingUser = userRepository.findByUsernameAndDeletedFlag(
-            user.getUsername(), 
+            registrationDTO.getUsername(), 
             false
         );
         
@@ -85,32 +73,34 @@ public class UserService {
             return response;
         }
         
+        // DTOからエンティティへ変換
+        User user = new User();
+        user.setUsername(registrationDTO.getUsername());
+        user.setPassword(registrationDTO.getPassword());
+        user.setName(registrationDTO.getName());
+        user.setGender(registrationDTO.getGender());
+        user.setAge(registrationDTO.getAge());
+        user.setPostalCode(registrationDTO.getPostalCode());
+        user.setPrefecture(registrationDTO.getPrefecture());
+        user.setCity(registrationDTO.getCity());
+        user.setAddress(registrationDTO.getAddress());
+        user.setPhoneNumber(registrationDTO.getPhoneNumber());
+        user.setNationality(registrationDTO.getNationality());
+        
         // ユーザーを保存
         User savedUser = userRepository.save(user);
         
         // 好きな食べ物を保存
-        //@SuppressWarnings("unchecked")⭐️これは記載しちゃダメ。基本的には値が有無チェックと型変換が可能かのチェックをしてから。
-        String favoriteFoods = (String) request.get("favoriteFoods");
-        
-        //ユーザー登録後に、好きな食べ物を1つずつ正規化してDBに保存する.
-                if (favoriteFoods != null && !favoriteFoods.trim().isEmpty()) {
-                    String[] foods = favoriteFoods.split("[,、]");
-                    for (String food : foods) {
-                        String trimmedFood = food.trim();
-                        if (!trimmedFood.isEmpty()) {
-                            FavoriteFood favoriteFood = new FavoriteFood(savedUser, trimmedFood);
-                            favoriteFoodRepository.save(favoriteFood);
-                        }
-                    }
-                }
+        saveFavoriteFoods(savedUser, registrationDTO.getFavoriteFoods());
         
         response.put("success", true);
         response.put("message", "登録成功");
         return response;
     }
     
+    // ユーザ更新処理
     @Transactional
-    public Map<String, Object> updateUser(Long userId, Map<String, Object> request) {
+    public Map<String, Object> updateUser(Long userId, UserUpdateDTO updateDTO) {
         Map<String, Object> response = new HashMap<>();
         
         Optional<User> userOpt = userRepository.findById(userId);
@@ -122,40 +112,22 @@ public class UserService {
         
         User user = userOpt.get();
         
-        // リクエストからデータを取得して更新
-        user.setName((String) request.get("name"));
-        user.setGender((String) request.get("gender"));
+        // DTOからエンティティへ更新
+        user.setName(updateDTO.getName());
+        user.setGender(updateDTO.getGender());
+        user.setAge(updateDTO.getAge());
+        user.setPostalCode(updateDTO.getPostalCode());
+        user.setPrefecture(updateDTO.getPrefecture());
+        user.setCity(updateDTO.getCity());
+        user.setAddress(updateDTO.getAddress());
+        user.setPhoneNumber(updateDTO.getPhoneNumber());
+        user.setNationality(updateDTO.getNationality());
         
-        if (request.get("age") != null) {
-            user.setAge(Integer.parseInt(request.get("age").toString()));
-        }
-        
-        user.setPostalCode((String) request.get("postalCode"));
-        user.setPrefecture((String) request.get("prefecture"));
-        user.setCity((String) request.get("city"));
-        user.setAddress((String) request.get("address"));
-        user.setPhoneNumber((String) request.get("phoneNumber"));
-        user.setNationality((String) request.get("nationality"));
-        
-        // 既存の好きな食べ物を	削除
-        favoriteFoodRepository.deleteAll(user.getFavoriteFoods());
-        user.getFavoriteFoods().clear();
+        // 既存の好きな食べ物を論理削除
+        favoriteFoodRepository.logicalDeleteByUser(user);
         
         // 新しい好きな食べ物を追加
-        @SuppressWarnings("unchecked")
-        String favoriteFoods = (String) request.get("favoriteFoods");
-        
-        //⭐️bulkinsertすると速い
-                if (favoriteFoods != null && !favoriteFoods.trim().isEmpty()) {
-                    String[] foods = favoriteFoods.split("[,、]");
-                    for (String food : foods) {
-                        String trimmedFood = food.trim();
-                        if (!trimmedFood.isEmpty()) {
-                            FavoriteFood favoriteFood = new FavoriteFood(user, trimmedFood);
-                            user.getFavoriteFoods().add(favoriteFood);
-                        }
-                    }
-                }
+        saveFavoriteFoods(user, updateDTO.getFavoriteFoods());
         
         userRepository.save(user);
         
@@ -163,36 +135,19 @@ public class UserService {
         response.put("message", "ユーザー情報を更新しました");
         return response;
     }
-
-    public Map<String, Object> getUserById(Long userId) {
+    
+    // ユーザ取得処理
+    public UserResponseDTO getUserById(Long userId) {
         Optional<User> userOpt = userRepository.findById(userId);
         
-        if (!userOpt.isPresent()) {
+        if (!userOpt.isPresent() || userOpt.get().getDeletedFlag()) {
             return null;
         }
         
-        User user = userOpt.get();
-        Map<String, Object> userMap = new HashMap<>();
-        userMap.put("id", user.getId());
-        userMap.put("username", user.getUsername());
-        userMap.put("name", user.getName());
-        userMap.put("gender", user.getGender());
-        userMap.put("age", user.getAge());
-        userMap.put("postalCode", user.getPostalCode());
-        userMap.put("prefecture", user.getPrefecture());
-        userMap.put("city", user.getCity());
-        userMap.put("address", user.getAddress());
-        userMap.put("phoneNumber", user.getPhoneNumber());
-        userMap.put("nationality", user.getNationality());
-        
-        List<String> foods = user.getFavoriteFoods().stream()
-            .map(FavoriteFood::getFoodName)
-            .collect(Collectors.toList());
-        userMap.put("favoriteFoods", foods);
-        
-        return userMap;
+        return convertToResponseDTO(userOpt.get());
     }
-
+    
+    // ユーザ削除処理（論理削除）
     @Transactional
     public Map<String, Object> deleteUser(Long userId) {
         Map<String, Object> response = new HashMap<>();
@@ -206,86 +161,148 @@ public class UserService {
         
         User user = userOpt.get();
         
-        // 論理削除: deleted_flag を true にする。⭐️ユーザだけでなく、好きな食べ物の削除もできるとよい。結合する時に処理が速くなる（ゴミが混ざらない）
+        // ユーザーの論理削除
         user.setDeletedFlag(true);
         userRepository.save(user);
+        
+        // 好きな食べ物も論理削除
+        favoriteFoodRepository.logicalDeleteByUser(user);
         
         response.put("success", true);
         response.put("message", "ユーザーを削除しました");
         return response;
     }
     
-    public List<Map<String, Object>> getAllUsers() {
-    	//全ユーザを取得（好きな食べ物も含む）
-        List<User> users = userRepository.findAllWithFavoriteFoods();
+    // 全ユーザ取得処理
+    public List<UserResponseDTO> getAllUsers() {
+        List<User> users = userRepository.findAllActiveUsersWithFoods();
         
-        return users.stream().map(user -> {
-            Map<String, Object> userMap = new HashMap<>();
-            userMap.put("id", user.getId());
-            userMap.put("username", user.getUsername());
-            userMap.put("name", user.getName());
-            userMap.put("gender", user.getGender());
-            userMap.put("age", user.getAge());
-            userMap.put("postalCode", user.getPostalCode());
-            userMap.put("prefecture", user.getPrefecture());
-            userMap.put("city", user.getCity());
-            userMap.put("address", user.getAddress());
-            userMap.put("phoneNumber", user.getPhoneNumber());
-            userMap.put("nationality", user.getNationality());
-            
-            List<String> foods = user.getFavoriteFoods().stream()
-                .map(FavoriteFood::getFoodName)
-                .collect(Collectors.toList());
-            userMap.put("favoriteFoods", foods);
-            
-            return userMap;
-        }).collect(Collectors.toList());
+        return users.stream()
+            .map(this::convertToResponseDTO)
+            .collect(Collectors.toList());
     }
     
-    public List<Map<String, Object>> searchUsers(String name, String gender, Integer age, String food, String searchType) {
-        //全ユーザを取得（好きな食べ物も含む）⭐必要なデータのみ持ってくる（サーバ・DBへの負荷を考慮する）メモリを大幅に食ってしまう。
-    	List<User> allUsers = userRepository.findAllWithFavoriteFoods();
+    // ユーザ検索処理
+    public List<UserResponseDTO> searchUsers(UserSearchDTO searchDTO) {
+        List<User> users;
         
-    	//条件に合うユーザだけフィルタ
-        return allUsers.stream()
+        // 食べ物検索があるか判定
+        boolean hasFoodSearch = searchDTO.getFood() != null && !searchDTO.getFood().isEmpty();
+        
+        if ("OR".equalsIgnoreCase(searchDTO.getSearchType())) {
+            // OR検索の場合は全データ取得後にアプリケーション側でフィルタリング
+            users = userRepository.findAllActiveUsersWithFoods();
+            users = filterUsersWithOr(users, searchDTO);
+        } else {
+            // AND検索の場合はSQLで絞り込み
+            if (hasFoodSearch) {
+                users = userRepository.searchUsersAndWithFood(
+                    searchDTO.getName(),
+                    searchDTO.getGender(),
+                    searchDTO.getAge(),
+                    searchDTO.getFood()
+                );
+            } else {
+                users = userRepository.searchUsersAnd(
+                    searchDTO.getName(),
+                    searchDTO.getGender(),
+                    searchDTO.getAge()
+                );
+            }
+        }
+        
+        return users.stream()
+            .map(this::convertToResponseDTO)
+            .collect(Collectors.toList());
+    }
+    
+    // ===== プライベートメソッド =====
+    
+    // 好きな食べ物を保存する共通処理
+    private void saveFavoriteFoods(User user, String favoriteFoodsStr) {
+        if (favoriteFoodsStr == null || favoriteFoodsStr.trim().isEmpty()) {
+            return;
+        }
+        
+        String[] foods = favoriteFoodsStr.split("[,、]");
+        List<FavoriteFood> favoriteFoodList = new ArrayList<>();
+        
+        for (String food : foods) {
+            String trimmedFood = food.trim();
+            if (!trimmedFood.isEmpty()) {
+                FavoriteFood favoriteFood = new FavoriteFood(user, trimmedFood);
+                favoriteFoodList.add(favoriteFood);
+            }
+        }
+        
+        // バルクインサートで一括保存
+        if (!favoriteFoodList.isEmpty()) {
+            favoriteFoodRepository.saveAll(favoriteFoodList);
+        }
+    }
+    
+    // OR検索のフィルタリング
+    private List<User> filterUsersWithOr(List<User> users, UserSearchDTO searchDTO) {
+        return users.stream()
             .filter(user -> {
-            	//各条件をチェック。⭐️１つ目と２つ目の条件は同じ？
-                boolean nameMatch = name == null || name.isEmpty() || user.getName().contains(name);
-                boolean genderMatch = gender == null || gender.isEmpty() || gender.equals(user.getGender());
-                boolean ageMatch = age == null || (user.getAge() != null && user.getAge().equals(age));
-                boolean foodMatch = food == null || food.isEmpty() || 
-                    user.getFavoriteFoods().stream()
-                        .anyMatch(f -> f.getFoodName().contains(food));
+                // 全ての条件がnullまたは空の場合は全件返す
+                boolean allEmpty = 
+                    (searchDTO.getName() == null || searchDTO.getName().isEmpty()) &&
+                    (searchDTO.getGender() == null || searchDTO.getGender().isEmpty()) &&
+                    searchDTO.getAge() == null &&
+                    (searchDTO.getFood() == null || searchDTO.getFood().isEmpty());
                 
-                //AND検索　または　OR検索
-                if ("OR".equalsIgnoreCase(searchType)) {
-                    return nameMatch || genderMatch || ageMatch || foodMatch;
-                } else {
-                    return nameMatch && genderMatch && ageMatch && foodMatch;
+                if (allEmpty) {
+                    return true;
                 }
-            })
-            //⭐ここのロジックがわからない。
-            .map(user -> {
-                Map<String, Object> userMap = new HashMap<>();
-                userMap.put("id", user.getId());
-                userMap.put("username", user.getUsername());
-                userMap.put("name", user.getName());
-                userMap.put("gender", user.getGender());
-                userMap.put("age", user.getAge());
-                userMap.put("postalCode", user.getPostalCode());
-                userMap.put("prefecture", user.getPrefecture());
-                userMap.put("city", user.getCity());
-                userMap.put("address", user.getAddress());
-                userMap.put("phoneNumber", user.getPhoneNumber());
-                userMap.put("nationality", user.getNationality());
                 
-                List<String> foods = user.getFavoriteFoods().stream()
-                    .map(FavoriteFood::getFoodName)
-                    .collect(Collectors.toList());
-                userMap.put("favoriteFoods", foods);
+                // 各条件をチェック
+                boolean nameMatch = searchDTO.getName() != null && 
+                    !searchDTO.getName().isEmpty() && 
+                    user.getName().contains(searchDTO.getName());
+                    
+                boolean genderMatch = searchDTO.getGender() != null && 
+                    !searchDTO.getGender().isEmpty() && 
+                    searchDTO.getGender().equals(user.getGender());
+                    
+                boolean ageMatch = searchDTO.getAge() != null && 
+                    user.getAge() != null && 
+                    user.getAge().equals(searchDTO.getAge());
+                    
+                boolean foodMatch = searchDTO.getFood() != null && 
+                    !searchDTO.getFood().isEmpty() && 
+                    user.getFavoriteFoods().stream()
+                        .filter(f -> !f.getDeletedFlag())
+                        .anyMatch(f -> f.getFoodName().contains(searchDTO.getFood()));
                 
-                return userMap;
+                // OR条件（いずれか一つでも一致すればtrue）
+                return nameMatch || genderMatch || ageMatch || foodMatch;
             })
             .collect(Collectors.toList());
+    }
+    
+    // UserエンティティをUserResponseDTOに変換
+    private UserResponseDTO convertToResponseDTO(User user) {
+        UserResponseDTO dto = new UserResponseDTO();
+        dto.setId(user.getId());
+        dto.setUsername(user.getUsername());
+        dto.setName(user.getName());
+        dto.setGender(user.getGender());
+        dto.setAge(user.getAge());
+        dto.setPostalCode(user.getPostalCode());
+        dto.setPrefecture(user.getPrefecture());
+        dto.setCity(user.getCity());
+        dto.setAddress(user.getAddress());
+        dto.setPhoneNumber(user.getPhoneNumber());
+        dto.setNationality(user.getNationality());
+        
+        // 論理削除されていない食べ物のみ取得
+        List<String> foods = user.getFavoriteFoods().stream()
+            .filter(f -> !f.getDeletedFlag())
+            .map(FavoriteFood::getFoodName)
+            .collect(Collectors.toList());
+        dto.setFavoriteFoods(foods);
+        
+        return dto;
     }
 }
