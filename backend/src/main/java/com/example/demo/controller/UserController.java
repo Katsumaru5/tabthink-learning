@@ -1,5 +1,6 @@
 package com.example.demo.controller;
 
+import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -156,30 +157,36 @@ public class UserController {
    */
   @GetMapping("/search")
   public ResponseEntity<List<UserResponseDTO>> searchUsers(
-      @RequestParam(required = false) String username,
       @RequestParam(required = false) String name,
       @RequestParam(required = false) String gender,
-      @RequestParam(required = false) Integer ageFrom,
-      @RequestParam(required = false) Integer ageTo) {
-
-    System.out.println("🔍 検索リクエスト: username=" + username + 
-                       ", name=" + name + 
-                       ", gender=" + gender + 
-                       ", ageFrom=" + ageFrom + 
-                       ", ageTo=" + ageTo);
-
-    // UserSearchDTOを作成して検索
-    UserSearchDTO searchDTO = new UserSearchDTO();
-    searchDTO.setUsername(username);
-    searchDTO.setName(name);
-    searchDTO.setGender(gender);
-    searchDTO.setAgeFrom(ageFrom);
-    searchDTO.setAgeTo(ageTo);
-
-    List<UserResponseDTO> results = userService.searchUsers(searchDTO);
-    System.out.println("✅ 検索結果: " + results.size() + "件");
-    
-    return ResponseEntity.ok(results);
+      @RequestParam(required = false) Integer age,      // Integer 型で受け取る
+      @RequestParam(required = false) String food,
+      @RequestParam(defaultValue = "OR") String searchType
+  ) {
+      try {
+          System.out.println("🔍 検索パラメータ:");
+          System.out.println("  name: " + name);
+          System.out.println("  gender: " + gender);
+          System.out.println("  age: " + age);
+          System.out.println("  food: " + food);
+          System.out.println("  searchType: " + searchType);
+          
+          UserSearchDTO searchDTO = new UserSearchDTO();
+          searchDTO.setName(name);
+          searchDTO.setGender(gender);
+          searchDTO.setAge(age);
+          searchDTO.setFood(food);
+          searchDTO.setSearchType(searchType);
+          
+          List<UserResponseDTO> results = userService.searchUsers(searchDTO);
+          
+          System.out.println("✅ 検索結果: " + results.size() + "件");
+          return ResponseEntity.ok(results);
+      } catch (Exception e) {
+          System.err.println("❌ 検索エラー: " + e.getMessage());
+          e.printStackTrace();
+          return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(new ArrayList<>());
+      }
   }
 
   /**
@@ -250,6 +257,7 @@ public class UserController {
 
       User user = userService.login(loginDTO);
       System.out.println("✅ ログイン成功: " + user.getUsername());
+      System.out.println("👤 Name: " + user.getName()); 
       
       Map<String, Object> response = new HashMap<>();
       response.put("success", true);

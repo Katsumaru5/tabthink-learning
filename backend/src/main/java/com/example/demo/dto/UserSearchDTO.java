@@ -4,10 +4,8 @@ public class UserSearchDTO {
   private String username;
   private String name;
   private String gender;
-  private Integer ageFrom;
-  private Integer ageTo;
-  private Integer age;  // 追加
-  private String food;  // 追加
+  private Integer age;
+  private String food;
   private String searchType;  // 追加（"AND" または "OR"）
 
   // デフォルトコンストラクタ
@@ -36,22 +34,6 @@ public class UserSearchDTO {
 
   public void setGender(String gender) {
     this.gender = gender;
-  }
-
-  public Integer getAgeFrom() {
-    return ageFrom;
-  }
-
-  public void setAgeFrom(Integer ageFrom) {
-    this.ageFrom = ageFrom;
-  }
-
-  public Integer getAgeTo() {
-    return ageTo;
-  }
-
-  public void setAgeTo(Integer ageTo) {
-    this.ageTo = ageTo;
   }
 
   // 追加: age
@@ -87,8 +69,6 @@ public class UserSearchDTO {
         "username='" + username + '\'' +
         ", name='" + name + '\'' +
         ", gender='" + gender + '\'' +
-        ", ageFrom=" + ageFrom +
-        ", ageTo=" + ageTo +
         ", age=" + age +
         ", food='" + food + '\'' +
         ", searchType='" + searchType + '\'' +
