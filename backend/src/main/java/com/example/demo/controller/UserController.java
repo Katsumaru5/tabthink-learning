@@ -55,7 +55,6 @@ public class UserController {
   public ResponseEntity<Map<String, Object>> registerUser(
       @Valid @RequestBody UserRegistrationDTO dto,
       BindingResult bindingResult) {
-
     System.out.println("📩 登録リクエスト受信: " + dto);
 
     // バリデーションエラーチェック
