@@ -16,15 +16,15 @@
             <input v-model="searchForm.name" type="text" placeholder="部分一致" />
           </div>
           
-          <div class="form-group">
-            <label>性別</label>
-            <select v-model="searchForm.gender">
-              <option value="">すべて</option>
-              <option value="男">男</option>
-              <option value="女">女</option>
-              <option value="その他">その他</option>
-            </select>
-          </div>
+		<div class="form-group">
+			<label>性別</label>
+			<select v-model="searchForm.gender">
+				<option value="">すべて</option>
+				<option value="男性">男性</option>
+				<option value="女性">女性</option>
+				<option value="その他">その他</option>
+			</select>
+		</div>
           
           <div class="form-group">
             <label>年齢</label>
