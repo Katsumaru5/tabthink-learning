@@ -1,13 +1,16 @@
 package com.example.demo.controller;
 
+import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
 import jakarta.validation.Valid;
 
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
-import org.springframework.validation.annotation.Validated;
+import org.springframework.validation.BindingResult;
+import org.springframework.validation.FieldError;
 import org.springframework.web.bind.annotation.CrossOrigin;
 import org.springframework.web.bind.annotation.DeleteMapping;
 import org.springframework.web.bind.annotation.GetMapping;
@@ -24,86 +27,248 @@ import com.example.demo.dto.UserRegistrationDTO;
 import com.example.demo.dto.UserResponseDTO;
 import com.example.demo.dto.UserSearchDTO;
 import com.example.demo.dto.UserUpdateDTO;
+import com.example.demo.model.User;
 import com.example.demo.service.UserService;
 
 @RestController
 @RequestMapping("/api/users")
 @CrossOrigin(origins = "http://localhost:8080")
-@Validated
 public class UserController {
-    
-    @Autowired
-    private UserService userService;
-    
-    // ログイン
-    @PostMapping("/login")
-    public ResponseEntity<?> login(@Valid @RequestBody LoginRequestDTO loginDTO) {
-        Map<String, Object> response = userService.login(loginDTO);
-        boolean success = (boolean) response.get("success");
-        return success ? ResponseEntity.ok(response) : ResponseEntity.badRequest().body(response);
+
+  @Autowired
+  private UserService userService;
+
+  /**
+   * 全ユーザー取得
+   */
+  @GetMapping("/list")
+  public ResponseEntity<List<UserResponseDTO>> getAllUsers() {
+    List<UserResponseDTO> users = userService.getAllUsers();
+    return ResponseEntity.ok(users);
+  }
+
+  /**
+   * ユーザー登録
+   */
+  @PostMapping("/register")
+  public ResponseEntity<Map<String, Object>> registerUser(
+      @Valid @RequestBody UserRegistrationDTO dto,
+      BindingResult bindingResult) {
+
+    System.out.println("📩 登録リクエスト受信: " + dto);
+
+    // バリデーションエラーチェック
+    if (bindingResult.hasErrors()) {
+      System.out.println("❌ バリデーションエラー: " + bindingResult.getErrorCount() + "件");
+      
+      Map<String, String> errors = new HashMap<>();
+      for (FieldError error : bindingResult.getFieldErrors()) {
+        System.out.println("  - フィールド: " + error.getField() + 
+                         ", 拒否された値: " + error.getRejectedValue() + 
+                         ", エラー: " + error.getDefaultMessage());
+        errors.put(error.getField(), error.getDefaultMessage());
+      }
+      
+      Map<String, Object> response = new HashMap<>();
+      response.put("success", false);
+      response.put("message", "入力内容に誤りがあります");
+      response.put("errors", errors);
+      
+      return ResponseEntity.badRequest().body(response);
     }
-    
-    // ユーザ登録
-    @PostMapping("/register")
-    public ResponseEntity<?> register(@Valid @RequestBody UserRegistrationDTO registrationDTO) {
-        Map<String, Object> response = userService.register(registrationDTO);
-        boolean success = (boolean) response.get("success");
-        return success ? ResponseEntity.ok(response) : ResponseEntity.badRequest().body(response);
+
+    try {
+      User user = userService.register(dto);
+      System.out.println("✅ ユーザー登録成功: " + user.getUsername());
+      
+      Map<String, Object> response = new HashMap<>();
+      response.put("success", true);
+      response.put("message", "登録成功");
+      response.put("user", user);
+      
+      return ResponseEntity.ok(response);
+    } catch (Exception e) {
+      System.err.println("❌ 登録エラー: " + e.getMessage());
+      e.printStackTrace();
+      
+      Map<String, Object> response = new HashMap<>();
+      response.put("success", false);
+      response.put("message", "登録に失敗しました: " + e.getMessage());
+      
+      return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(response);
     }
-    
-    // 全ユーザ取得
-    @GetMapping("/list")
-    public ResponseEntity<List<UserResponseDTO>> getAllUsers() {
-        List<UserResponseDTO> users = userService.getAllUsers();
-        return ResponseEntity.ok(users);
+  }
+
+  /**
+   * ユーザー情報更新
+   */
+  @PutMapping("/{id}")
+  public ResponseEntity<Map<String, Object>> updateUser(
+      @PathVariable Long id,
+      @Valid @RequestBody UserUpdateDTO dto,
+      BindingResult bindingResult) {
+
+    System.out.println("📩 更新リクエスト受信: ID=" + id + ", データ=" + dto);
+
+    // バリデーションエラーチェック
+    if (bindingResult.hasErrors()) {
+      System.out.println("❌ バリデーションエラー: " + bindingResult.getErrorCount() + "件");
+      
+      Map<String, String> errors = new HashMap<>();
+      for (FieldError error : bindingResult.getFieldErrors()) {
+        System.out.println("  - フィールド: " + error.getField() + 
+                         ", 拒否された値: " + error.getRejectedValue() + 
+                         ", エラー: " + error.getDefaultMessage());
+        errors.put(error.getField(), error.getDefaultMessage());
+      }
+      
+      Map<String, Object> response = new HashMap<>();
+      response.put("success", false);
+      response.put("message", "入力内容に誤りがあります");
+      response.put("errors", errors);
+      
+      return ResponseEntity.badRequest().body(response);
     }
-    
-    // ユーザ検索
-    @GetMapping("/search")
-    public ResponseEntity<List<UserResponseDTO>> searchUsers(
-        @RequestParam(required = false) String name,
-        @RequestParam(required = false) String gender,
-        @RequestParam(required = false) Integer age,
-        @RequestParam(required = false) String food,
-        @RequestParam(defaultValue = "AND") String searchType
-    ) {
-        UserSearchDTO searchDTO = new UserSearchDTO();
-        searchDTO.setName(name);
-        searchDTO.setGender(gender);
-        searchDTO.setAge(age);
-        searchDTO.setFood(food);
-        searchDTO.setSearchType(searchType);
-        
-        List<UserResponseDTO> users = userService.searchUsers(searchDTO);
-        return ResponseEntity.ok(users);
+
+    try {
+      userService.updateUser(id, dto);
+      System.out.println("✅ ユーザー更新成功: ID=" + id);
+      
+      Map<String, Object> response = new HashMap<>();
+      response.put("success", true);
+      response.put("message", "更新しました");
+      
+      return ResponseEntity.ok(response);
+    } catch (Exception e) {
+      System.err.println("❌ 更新エラー: " + e.getMessage());
+      e.printStackTrace();
+      
+      Map<String, Object> response = new HashMap<>();
+      response.put("success", false);
+      response.put("message", "更新に失敗しました: " + e.getMessage());
+      
+      return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(response);
     }
+  }
+
+  /**
+   * ユーザー検索
+   */
+  @GetMapping("/search")
+  public ResponseEntity<List<UserResponseDTO>> searchUsers(
+      @RequestParam(required = false) String username,
+      @RequestParam(required = false) String name,
+      @RequestParam(required = false) String gender,
+      @RequestParam(required = false) Integer ageFrom,
+      @RequestParam(required = false) Integer ageTo) {
+
+    System.out.println("🔍 検索リクエスト: username=" + username + 
+                       ", name=" + name + 
+                       ", gender=" + gender + 
+                       ", ageFrom=" + ageFrom + 
+                       ", ageTo=" + ageTo);
+
+    // UserSearchDTOを作成して検索
+    UserSearchDTO searchDTO = new UserSearchDTO();
+    searchDTO.setUsername(username);
+    searchDTO.setName(name);
+    searchDTO.setGender(gender);
+    searchDTO.setAgeFrom(ageFrom);
+    searchDTO.setAgeTo(ageTo);
+
+    List<UserResponseDTO> results = userService.searchUsers(searchDTO);
+    System.out.println("✅ 検索結果: " + results.size() + "件");
     
-    // ユーザ詳細取得
-    @GetMapping("/{id}")
-    public ResponseEntity<?> getUserById(@PathVariable Long id) {
-        UserResponseDTO user = userService.getUserById(id);
-        if (user == null) {
-            return ResponseEntity.notFound().build();
-        }
-        return ResponseEntity.ok(user);
-    }
+    return ResponseEntity.ok(results);
+  }
+
+  /**
+   * ユーザー削除
+   */
+  @DeleteMapping("/{id}")
+  public ResponseEntity<Map<String, Object>> deleteUser(@PathVariable Long id) {
+    System.out.println("🗑️ 削除リクエスト: ID=" + id);
     
-    // ユーザ更新
-    @PutMapping("/{id}")
-    public ResponseEntity<?> updateUser(
-        @PathVariable Long id, 
-        @Valid @RequestBody UserUpdateDTO updateDTO
-    ) {
-        Map<String, Object> response = userService.updateUser(id, updateDTO);
-        boolean success = (boolean) response.get("success");
-        return success ? ResponseEntity.ok(response) : ResponseEntity.badRequest().body(response);
+    try {
+      userService.deleteUser(id);
+      System.out.println("✅ ユーザー削除成功: ID=" + id);
+      
+      Map<String, Object> response = new HashMap<>();
+      response.put("success", true);
+      response.put("message", "削除しました");
+      
+      return ResponseEntity.ok(response);
+    } catch (Exception e) {
+      System.err.println("❌ 削除エラー: " + e.getMessage());
+      
+      Map<String, Object> response = new HashMap<>();
+      response.put("success", false);
+      response.put("message", "削除に失敗しました: " + e.getMessage());
+      
+      return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(response);
     }
+  }
+
+  /**
+   * ユーザーID取得
+   */
+  @GetMapping("/{id}")
+  public ResponseEntity<?> getUserById(@PathVariable Long id) {
+    System.out.println("🔍 ユーザー取得: ID=" + id);
     
-    // ユーザ削除（論理削除）
-    @DeleteMapping("/{id}")
-    public ResponseEntity<?> deleteUser(@PathVariable Long id) {
-        Map<String, Object> response = userService.deleteUser(id);
-        boolean success = (boolean) response.get("success");
-        return success ? ResponseEntity.ok(response) : ResponseEntity.badRequest().body(response);
+    try {
+      UserResponseDTO user = userService.getUserById(id);
+      System.out.println("✅ ユーザー取得成功: " + user);
+      
+      return ResponseEntity.ok(user);
+    } catch (Exception e) {
+      System.err.println("❌ ユーザー取得エラー: " + e.getMessage());
+      
+      Map<String, Object> response = new HashMap<>();
+      response.put("success", false);
+      response.put("message", "ユーザーが見つかりません");
+      
+      return ResponseEntity.status(HttpStatus.NOT_FOUND).body(response);
     }
+  }
+
+  /**
+   * ログイン
+   */
+  @PostMapping("/login")
+  public ResponseEntity<Map<String, Object>> login(@RequestBody Map<String, String> credentials) {
+    String username = credentials.get("username");
+    String password = credentials.get("password");
+
+    System.out.println("🔐 ログイン試行: username=" + username);
+
+    try {
+      // LoginRequestDTOを作成
+      LoginRequestDTO loginDTO = new LoginRequestDTO();
+      loginDTO.setUsername(username);
+      loginDTO.setPassword(password);
+
+      User user = userService.login(loginDTO);
+      System.out.println("✅ ログイン成功: " + user.getUsername());
+      
+      Map<String, Object> response = new HashMap<>();
+      response.put("success", true);
+      response.put("message", "ログイン成功");
+      response.put("user", Map.of(
+        "id", user.getId(),
+        "username", user.getUsername(),
+        "name", user.getName()
+      ));
+      
+      return ResponseEntity.ok(response);
+    } catch (Exception e) {
+      System.err.println("❌ ログイン失敗: " + e.getMessage());
+      
+      Map<String, Object> response = new HashMap<>();
+      response.put("success", false);
+      response.put("error", e.getMessage());
+      
+      return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body(response);
+    }
+  }
 }
