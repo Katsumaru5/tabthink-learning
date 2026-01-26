@@ -35,38 +35,59 @@ export default {
       username: '',
       password: '',
       errorMessage: ''
-    }
+    };
   },
   methods: {
     async handleLogin() {
-      try {
-        const response = await fetch('http://localhost:8081/api/users/login', {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({
-            username: this.username,
-            password: this.password
-          })
-        })
-        
-        const data = await response.json()
-        
-        if (response.ok) {
-          localStorage.setItem('username', data.name)
-          console.log('保存した名前:', localStorage.getItem('username'))
-          this.$router.push('/users')
-        } else {
-          this.errorMessage = data.error
-        }
-      } catch (error) {
-        this.errorMessage = '接続エラーが発生しました'
-      }
-    },
-    goToRegister() {
-      this.$router.push('/register')
-    }
-  }
+		this.errorMessage = '';
+
+	try {
+		const response = await fetch('http://localhost:8081/api/users/login', {
+		method: 'POST',
+		headers: {
+			'Content-Type': 'application/json',
+		},
+			body: JSON.stringify({
+				username: this.username,
+				password: this.password
+			})
+		});
+
+		const data = await response.json();
+		// デバッグ用ログ
+		console.log('=== ログインレスポンス ===');
+		console.log('response.ok:', response.ok);
+		console.log('data:', data);
+		console.log('data.success:', data.success);
+		console.log('data.user:', data.user);
+		if (data.user) {
+			console.log('data.user.name:', data.user.name);
+		}
+		console.log('=====================');
+		
+		if (response.ok && data.success) {
+			// ユーザー名を保存
+			if (data.user && data.user.name) {
+				localStorage.setItem('userName', data.user.name);
+			console.log('✅ localStorage.setItem("userName"):', data.user.name);
+			
+			// 保存確認
+			const saved = localStorage.getItem('userName');
+			console.log('✅ localStorage.getItem("userName"):', saved);
+		} else {
+			console.error('❌ data.user.name が存在しません');
+		}
+		this.$router.push('/users');
+	} else {
+		this.errorMessage = data.error || 'ログインに失敗しました';
+	}
+} catch (error) {
+	console.error('ログインエラー:', error);
+	this.errorMessage = '接続エラーが発生しました';
 }
+	}
+  }
+};
 </script>
 
 <style scoped>

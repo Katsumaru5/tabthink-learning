@@ -132,7 +132,7 @@ export default {
     }
   },
   created() {
-    this.currentUsername = localStorage.getItem('username') || 'ゲスト'
+    this.currentUsername = localStorage.getItem('userName') || 'ゲスト'
     this.loadAllUsers()
   },
   methods: {
@@ -185,7 +185,7 @@ export default {
       this.loadAllUsers()
     },
     handleLogout() {
-      localStorage.removeItem('username')
+      localStorage.removeItem('userName')
       this.$router.push('/login')
     },
     goToEdit(userId) {
