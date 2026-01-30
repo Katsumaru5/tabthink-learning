@@ -3,7 +3,7 @@ package com.example.demo.dto;
 import java.util.List;
 
 /**
- * ユーザー一覧表示用の軽量DTO
+ * ユーザー一覧表示用のDTO
  */
 public class UserListDTO {
     private Long id;
