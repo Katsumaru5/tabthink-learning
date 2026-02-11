@@ -10,9 +10,13 @@ import jakarta.validation.constraints.Pattern;
 import jakarta.validation.constraints.Size;
 
 public class UserRegistrationDTO {
-
+//TODO:データ型と桁数についてチェックを入れる。フロントとサーバサイドの両方で。フロントはユーザビリティ、バックエンドはセキュリティが目的。相関チェックも。
+//サーバサイドのチェックが甘いことが多い。相関チェックが不十分なことが多い（例：分割払いしたいのに、分割回数が1回しか選べない）。
+//フロントサイド側でできるだけ、ユーザに正しい情報を入力させるように工夫するのがベスト。
+	
   @NotBlank(message = "ユーザー名は必須です")
   @Size(min = 3, max = 20, message = "ユーザー名は3〜20文字で入力してください")
+  @Pattern(regexp = "^[a-zA-Z0-9_]+$", message = "ユーザー名は英数字とアンダースコアのみ使用可能です")// 追加
   private String username;
 
   @NotBlank(message = "パスワードは必須です")
@@ -20,6 +24,7 @@ public class UserRegistrationDTO {
   private String password;
 
   @NotBlank(message = "氏名は必須です")
+  @Pattern(regexp = "^[\\p{L} 　]+$", message = "氏名は文字とスペースのみ使用可能です") // 追加（日本語/外国語文字対応）
   private String name;
 
   @NotBlank(message = "性別は必須です")
@@ -36,6 +41,7 @@ public class UserRegistrationDTO {
   private String postalCode;
 
   @NotBlank(message = "都道府県は必須です")
+  @Pattern(regexp = "^[\\p{L} 　]+$", message = "都道府県は文字とスペースのみ使用可能です") // 追加
   private String prefecture;
 
   @NotBlank(message = "市区町村は必須です")

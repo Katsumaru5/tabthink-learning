@@ -8,6 +8,7 @@ import java.util.Optional;
 import java.util.stream.Collectors;
 
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -22,6 +23,7 @@ import com.example.demo.model.User;
 import com.example.demo.repository.FavoriteFoodRepository;
 import com.example.demo.repository.UserRepository;
 
+
 @Service
 public class UserService {
   
@@ -31,39 +33,60 @@ public class UserService {
   @Autowired
   private FavoriteFoodRepository favoriteFoodRepository;
   
+  @Autowired
+  private PasswordEncoder passwordEncoder;
+
   /**
    * ログイン処理
    */
   public Map<String, Object> login(LoginRequestDTO loginDTO) {
-    System.out.println("🔐 ログイン試行: username=" + loginDTO.getUsername());
-    
-    Optional<User> userOpt = userRepository.findByUsernameAndDeletedFlag(
-      loginDTO.getUsername(), 
-      false
-    );
-    
-    if (userOpt.isPresent()) {
-      User user = userOpt.get();
-      if (user.getPassword().equals(loginDTO.getPassword())) {
-        System.out.println("✅ ログイン成功: " + user.getUsername());
-        System.out.println("👤 Name: " + user.getName());
-        
-        Map<String, Object> response = new HashMap<>();
-        response.put("success", true);
-        response.put("message", "ログイン成功");
-        response.put("user", Map.of(
-          "id", user.getId(),
-          "username", user.getUsername(),
-          "name", user.getName()
-        ));
-        
-        return response;
-      }
-    }
-    
-    System.err.println("❌ ログイン失敗: 入力情報が間違っています");
-    throw new RuntimeException("入力情報が間違っています");
-  }
+
+	  Optional<User> userOpt = userRepository.findByUsernameAndDeletedFlag(
+	    loginDTO.getUsername(), 
+	    false
+	  );
+
+	  if (userOpt.isPresent()) {
+
+	    User user = userOpt.get();
+	    String rawPassword = loginDTO.getPassword();
+	    String storedPassword = user.getPassword();
+
+	    boolean isMatch = false;
+
+	    // ① BCrypt形式なら通常チェック
+	    if (storedPassword != null && storedPassword.startsWith("$2a$")) {
+	      isMatch = passwordEncoder.matches(rawPassword, storedPassword);
+	    } 
+	    // ② 平文の場合
+	    else {
+	      if (rawPassword.equals(storedPassword)) {
+	        isMatch = true;
+
+	        // 🔥 ここでハッシュ化して更新（自動移行）
+	        String encoded = passwordEncoder.encode(rawPassword);
+	        user.setPassword(encoded);
+	        userRepository.save(user);
+	        System.out.println("🔄 平文パスワードをハッシュ化しました");
+	      }
+	    }
+
+	    if (isMatch) {
+	      Map<String, Object> response = new HashMap<>();
+	      response.put("success", true);
+	      response.put("message", "ログイン成功");
+	      response.put("user", Map.of(
+	        "id", user.getId(),
+	        "username", user.getUsername(),
+	        "name", user.getName()
+	      ));
+	      return response;
+	    }
+	  }
+
+	  throw new RuntimeException("入力情報が間違っています");
+	}
+
   
   /**
    * ユーザ登録処理
@@ -81,11 +104,14 @@ public class UserService {
     if (existingUser.isPresent()) {
       throw new RuntimeException("このユーザー名は既に使用されています");
     }
+    //TODO:PWの暗号化を入れる
     
     // DTOからエンティティへ変換
     User user = new User();
     user.setUsername(registrationDTO.getUsername());
-    user.setPassword(registrationDTO.getPassword());
+    // パスワードをハッシュ化
+    String encodedPassword = passwordEncoder.encode(registrationDTO.getPassword());
+    user.setPassword(encodedPassword);
     user.setName(registrationDTO.getName());
     user.setGender(registrationDTO.getGender());
     user.setAge(registrationDTO.getAge());

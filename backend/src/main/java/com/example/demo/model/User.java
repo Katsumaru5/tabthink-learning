@@ -14,6 +14,12 @@ import jakarta.persistence.GenerationType;
 import jakarta.persistence.Id;
 import jakarta.persistence.OneToMany;
 import jakarta.persistence.Table;
+import jakarta.validation.constraints.Max;          // 追加/修正
+import jakarta.validation.constraints.Min;          // 追加/修正
+import jakarta.validation.constraints.NotBlank;     // 追加/修正
+import jakarta.validation.constraints.NotNull;      // 追加/修正
+import jakarta.validation.constraints.Pattern;      // 追加/修正
+import jakarta.validation.constraints.Size;         // 追加/修正
 
 import org.springframework.data.annotation.CreatedBy;
 import org.springframework.data.annotation.CreatedDate;
@@ -30,21 +36,58 @@ public class User {
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
     
+    // ユーザー名: 英数字とアンダースコアのみ、3〜20文字
+    @NotBlank(message = "ユーザー名は必須です") // 追加
+    @Size(min = 3, max = 20, message = "ユーザー名は3〜20文字で入力してください") // 追加
+    @Pattern(regexp = "^[a-zA-Z0-9_]+$", message = "ユーザー名は英数字とアンダースコアのみ使用可能です") // 追加
     @Column(nullable = false, unique = true)
     private String username;
     
+    // パスワード: 最低6文字
+    @NotBlank(message = "パスワードは必須です") // 追加
+    @Size(min = 6, message = "パスワードは6文字以上で入力してください") // 追加
     @Column(nullable = false)
     private String password;
     
+    // 氏名: 文字と空白のみ
+    @NotBlank(message = "氏名は必須です") // 追加
+    @Pattern(regexp = "^[\\p{L} 　]+$", message = "氏名は文字とスペースのみ使用可能です") // 追加
     @Column(nullable = false)
     private String name;
     
+    // 性別: 男性/女性/その他のみ
+    @NotBlank(message = "性別は必須です") // 追加
+    @Pattern(regexp = "男性|女性|その他", message = "性別は「男性」「女性」「その他」から選択してください") // 追加
     private String gender;
+
+    // 年齢: 0〜150
+    @NotNull(message = "年齢は必須です") // 追加
+    @Min(value = 0, message = "年齢は0以上で入力してください") // 追加
+    @Max(value = 150, message = "年齢は150以下で入力してください") // 追加
     private Integer age;
+
+    // 郵便番号: 7桁数字
+    @NotBlank(message = "郵便番号は必須です") // 追加
+    @Pattern(regexp = "^\\d{7}$", message = "郵便番号はハイフンなしの7桁で入力してください（例: 1000001）") // 追加
     private String postalCode;
+
+    // 都道府県: 文字と空白のみ
+    @NotBlank(message = "都道府県は必須です") // 追加
+    @Pattern(regexp = "^[\\p{L} 　]+$", message = "都道府県は文字とスペースのみ使用可能です") // 追加
     private String prefecture;
+
+    // 市区町村: 文字と空白のみ
+    @NotBlank(message = "市区町村は必須です") // 追加
+    @Pattern(regexp = "^[\\p{L} 　]+$", message = "市区町村は文字とスペースのみ使用可能です") // 追加
     private String city;
+
+    // 住所: 柔軟に許可（数字・記号もOK）
+    @NotBlank(message = "住所は必須です") // 追加
     private String address;
+
+    // 電話番号: 10桁または11桁の数字
+    @NotBlank(message = "電話番号は必須です") // 追加
+    @Pattern(regexp = "^0\\d{9,10}$", message = "電話番号はハイフンなしの10桁または11桁で入力してください（例: 09012345678）") // 追加
     private String phoneNumber;
     private String nationality;
     
